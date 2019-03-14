@@ -1,0 +1,11 @@
+{
+  "name": "Fantasy FRC",
+  "version": "1.0.0",
+  "description": "A Discord Bot to manage Fantasy FRC",
+  "main": "bot.js",
+  "author": "Anitej \"Tej\" Biradar @Qwerty253#9647",
+  "dependencies": {
+    "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
+    "request": "^2.88.0"
+  }
+}
