@@ -2,6 +2,7 @@ var Discord = require('discord.io');
 var auth = require('./auth.json');
 var request = require('request');
 var pickList = {};
+var teamList = "";
 
 var prefix = '!';
 
@@ -111,6 +112,47 @@ bot.on('message', function (user, userID, channelID, message, event) {
                     });
                 }
                 break;
+            case 'setEvent':
+                if (args[0] == undefined) {
+                    bot.sendMessage({
+                        to: channelID,
+                        message: 'To use this command, type `' + prefix + 'setEvent <event_id>`.'
+                    });
+                } else {
+                    // Set up TBA request
+                    var options = {
+                        url: 'http://www.thebluealliance.com/api/v3/event/' + args[0] + '/teams/simple',
+                        headers: {
+                            'X-TBA-Auth-Key': auth.tbaKey
+                        }
+                    }
+                    // Access TBA
+                    request(options, function (error, response, body) {
+                        body = JSON.parse(body);
+                        if (!error && response.statusCode == 200) {
+                            for (i = 0; i < body.length; i++) {
+                                teamList += body[i].team_number + '\n';
+                            }
+                            // Send Message with Team List
+                            bot.sendMessage({
+                                to: channelID,
+                                message: teamList
+                            });
+                        } else {
+                            bot.sendMessage({
+                                to: channelID,
+                                message: 'Invalid Event ID.'
+                            });
+                        }
+                    });
+                }
+                break;
+            case 'checkTeams':
+                bot.sendMessage({
+                    to: channelID,
+                    message: teamList
+                });
+                break;
             case 'setPlayers':
                 args = shuffle(args);
                 for (i = 0; i < args.length; i++) {
@@ -130,10 +172,13 @@ bot.on('message', function (user, userID, channelID, message, event) {
                 } else {
                     if (pickList[userID][0] == 0) {
                         pickList[userID][0] = args[0];
+                        teamList = teamList.substring(0, teamList.indexOf(args[0])) + teamList.substring(teamList.indexOf(args[0]) + args[0].length + 1);
                     } else if (pickList[userID][1] == 0) {
                         pickList[userID][1] = args[0];
+                        teamList = teamList.substring(0, teamList.indexOf(args[0])) + teamList.substring(teamList.indexOf(args[0]) + args[0].length + 1);
                     } else if (pickList[userID][2] == 0) {
                         pickList[userID][2] = args[0];
+                        teamList = teamList.substring(0, teamList.indexOf(args[0])) + teamList.substring(teamList.indexOf(args[0]) + args[0].length + 1);
                     }
                 }
                 bot.sendMessage({
@@ -214,4 +259,4 @@ var shuffle = function (array) {
     }
   
     return array;
-  }
+}
