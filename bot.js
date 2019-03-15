@@ -1,6 +1,7 @@
 var Discord = require('discord.io');
 var auth = require('./auth.json');
 var request = require('request');
+var pickList = {};
 
 var prefix = '!';
 
@@ -14,14 +15,14 @@ var bot = new Discord.Client({
 bot.on('ready', function (event) {
     console.log('Connected');
     console.log('Logged in as: ');
-    console.log(bot.username + '(' + bot.id + ')');
+    console.log(bot.username + ' (' + bot.id + ')');
 });
 
 // Read Messages
 bot.on('message', function (user, userID, channelID, message, event) {
 
     // Bot Call Methods
-    // It will listen for messages that will start with prefix
+    // Listens for messages that will start with prefix
 
     if (message.substring(0, 1) == prefix) {
         var args = message.substring(1).split(' ');
@@ -87,15 +88,15 @@ bot.on('message', function (user, userID, channelID, message, event) {
                         if (!error && response.statusCode == 200) {
                             var teamData = 
                             '__**Team Data**__' + '\n' +
-                            'Team Name: ' + body.nickname || 'not found' + '\n' +
-                            'Team Number: ' + body.team_number  || 'not found' + '\n' +
-                            'City: ' + body.city || 'not found' + '\n' +
-                            'State/Province: ' + body.state_prov || 'not found' + '\n' +
-                            'Zip Code: ' + body.postal_code || 'not found' + '\n' +
-                            'Country: ' + body.country || 'not found' + '\n' +
-                            'Rookie Year: ' + body.rookie_year || 'not found' + '\n' +
-                            'Motto: ' + body.motto || 'not found' + '\n' +
-                            'Website: ' + body.website || 'not found'
+                            'Team Name: ' + body.nickname + '\n' +
+                            'Team Number: ' + body.team_number + '\n' +
+                            'City: ' + body.city + '\n' +
+                            'State/Province: ' + body.state_prov + '\n' +
+                            'Zip Code: ' + body.postal_code + '\n' +
+                            'Country: ' + body.country + '\n' +
+                            'Rookie Year: ' + body.rookie_year + '\n' +
+                            'Motto: ' + body.motto + '\n' +
+                            'Website: ' + body.website
                             // Send Message with Team Data
                             bot.sendMessage({
                                 to: channelID,
@@ -109,6 +110,36 @@ bot.on('message', function (user, userID, channelID, message, event) {
                         }
                     });
                 }
+                break;
+            case 'setPlayers':
+                args = shuffle(args);
+                for (i = 0; i < args.length; i++) {
+                    pickList[args[i].substring(2, args[i].length - 1)] = [0, 0, 0];
+                }
+                bot.sendMessage({
+                    to: channelID,
+                    message: JSON.stringify(pickList)
+                });
+                break;
+            case 'pick':
+                if (args[0] == undefined) {
+                    bot.sendMessage({
+                        to: channelID,
+                        message: 'Select a team!'
+                    });
+                } else {
+                    if (pickList[userID][0] == 0) {
+                        pickList[userID][0] = args[0];
+                    } else if (pickList[userID][1] == 0) {
+                        pickList[userID][1] = args[0];
+                    } else if (pickList[userID][2] == 0) {
+                        pickList[userID][2] = args[0];
+                    }
+                }
+                bot.sendMessage({
+                    to: channelID,
+                    message: JSON.stringify(pickList)
+                });
                 break;
             // Help
             // Displays a list of commands a user can select
@@ -165,3 +196,22 @@ var checkCaps = function (inputString) {
 var looseMatch = function (msg, rule) {
     return new RegExp("^" + rule.split("*").join(".*") + "$").test(msg);
 }
+
+var shuffle = function (array) {
+    var currentIndex = array.length, temporaryValue, randomIndex;
+  
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+  
+      // Pick a remaining element...
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+  
+      // And swap it with the current element.
+      temporaryValue = array[currentIndex];
+      array[currentIndex] = array[randomIndex];
+      array[randomIndex] = temporaryValue;
+    }
+  
+    return array;
+  }
