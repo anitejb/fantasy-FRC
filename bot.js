@@ -276,27 +276,27 @@ bot.on('message', function (user, userID, channelID, message, event) {
             case 'help':
                 bot.sendMessage({
                     to: channelID,
-                    message: 'Hi! I\'m Fantasy FRC, a pretty cool bot that helps out with FRC! Here\'s what I can do: \n\n' +
+                    message: 'Hi! I\'m Fantasy FRC, a bot that can organize drafts with FRC! Here\'s what I can do: \n\n' +
                     '`' + prefix + 'prefix <new_prefix>`\n' + 
                     'Allows users to change the character that calls the bot (default is `!`)\n\n' +
                     '`' + prefix + 'TBATeam <team_number>`\n' +
-                    'Allows users to access information about Teams, sourced from The Blue Alliance\n' + 
+                    'Allows users to access information about Teams, sourced from The Blue Alliance\n\n' + 
                     '`' + prefix + 'setEvent <event_id>`\n' +
                     'Allows users to set the event, from which teams will be pulled\n' + 
-                    '`event_id` must be official FIRST event code (ie, FMA Mt. Olive 2019 = 2019njfla)\n' + 
+                    '`event_id` must be official FIRST event code (ie, FMA Mt. Olive 2019 = 2019njfla)\n\n' + 
                     '`' + prefix + 'checkTeams`\n' +
-                    'Displays the remaining available teams in the draft\n' + 
+                    'Displays the remaining available teams in the draft\n\n' + 
                     '`' + prefix + 'setPlayers @user#9999 @user#9999...`\n' +
                     'Allows users to set the players for the draft\n' + 
-                    'Requires @user for each player separated by spaces (ie, !setPlayers @Qwerty253#9647 @testUser#9999)\n' + 
+                    'Requires @user for each player separated by spaces (ie, !setPlayers @Qwerty253#9647 @testUser#9999)\n\n' + 
                     '`' + prefix + 'showDraft`\n' +
-                    'Displays the players and their choices in the draft\n' + 
+                    'Displays the players and their choices in the draft\n\n' + 
                     '`' + prefix + 'checkCurrentPlayer`\n' +
-                    'Displays the players whose turn it is\n' + 
+                    'Displays the players whose turn it is\n\n' + 
                     '`' + prefix + 'pick <team_number>`\n' +
-                    'Allows users to select a team for their draft alliance\n' + 
+                    'Allows users to select a team for their draft alliance\n\n' + 
                     '`' + prefix + 'reset`\n' +
-                    'Resets the draft. This is irreversible, so think wisely!\n'
+                    'Resets the draft. This is irreversible, so think wisely!\n\n'
                 });
                 break;
             // Test
@@ -350,7 +350,7 @@ var compilePickListDisplay = function () {
     pickListDisplay = createTable(pickListDisplayArr);
 }
 
-// Create a pretty table with Discord formatting
+// Create a pretty table (string) with Discord formatting
 var createTable = function (arr) {
     var table = '';
     var colArr = [];
