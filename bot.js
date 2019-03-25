@@ -5,6 +5,8 @@ var pickList = {};
 var pickListDisplay = '';
 var teamList = [];
 var teamListDisplay = '';
+var currentPlayer = '';
+var currentPlayerIndex = 0;
 
 var prefix = '!';
 
@@ -178,13 +180,31 @@ bot.on('message', function (user, userID, channelID, message, event) {
                     message: pickListDisplay
                 });
                 break;
+            case 'checkCurrentPlayer':
+                currentPlayer = Object.keys(pickList)[currentPlayerIndex];
+                bot.sendMessage({
+                    to: channelID,
+                    message: currentPlayer
+                });
+                break;
             case 'pick':
+                currentPlayer = Object.keys(pickList)[currentPlayerIndex];
                 if (args[0] == undefined) {
                     bot.sendMessage({
                         to: channelID,
                         message: 'Select a team!'
                     });
-                } else if (teamListDisplay.includes(args[0])) {
+                } else if (event.d.member.nick !== currentPlayer) { // not user's turn
+                    bot.sendMessage({
+                        to: channelID,
+                        message: 'Not your turn!'
+                    });
+                } else if (!teamListDisplay.includes(args[0])) {
+                    bot.sendMessage({
+                        to: channelID,
+                        message: 'Team does not exist/is not competing here/has already been chosen!'
+                    });
+                } else {
                     if (pickList[event.d.member.nick][0] == 0) {
                         pickList[event.d.member.nick][0] = args[0];
                     } else if (pickList[event.d.member.nick][1] == 0) {
@@ -198,6 +218,15 @@ bot.on('message', function (user, userID, channelID, message, event) {
                         });
                         break;
                     }
+                
+                    bot.addReaction({
+                        channelID: channelID,
+                        messageID: event.d.id,
+                        reaction: '👍'
+                    });
+
+                    currentPlayerIndex++;
+
                     compilePickListDisplay();
                     bot.sendMessage({
                         to: channelID,
