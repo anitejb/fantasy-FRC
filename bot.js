@@ -7,7 +7,6 @@ var teamList = [];
 var teamListDisplay = '';
 var currentPlayer = '';
 var currentPlayerIndex = 0;
-
 var prefix = '!';
 
 // Initialize Discord Bot
@@ -43,27 +42,14 @@ bot.on('message', function (user, userID, channelID, message, event) {
                     message: 'Pong!'
                 });
                 break;
-            // Meme
-            // Returns the previous message, converted into meme speak (good morning => gOoD MoRnInG)
-            case 'meme':
-                bot.getMessages({
-                    channelID: channelID,
-                    limit: 2
-                }, function (err, messageArr) {
-                    var prevMessage = messageArr[1].content
-                    bot.sendMessage({
-                        to: channelID,
-                        message: meme(prevMessage)
-                    });
-                });
-                break;
             // Prefix
             // Allows users to change the character that calls the bot (default is `!`)
+            // Requires new desired prefix character
             case 'prefix':
-                if (args[0] == undefined || args[0].length > 1) {
+                if (args[0] == undefined || args[0].length > 1) { // No arguments OR prefix longer than one character
                     bot.sendMessage({
                         to: channelID,
-                        message: 'Prefixes may only be a single character.'
+                        message: 'Prefixes must be a single character.'
                     });
                 } else {
                     prefix = args[0];
@@ -73,8 +59,11 @@ bot.on('message', function (user, userID, channelID, message, event) {
                     });
                 }
                 break;
+            // TBATeam
+            // Allows users to access information about Teams, sourced from The Blue Alliance
+            // Requires Team Number
             case 'TBATeam':
-                if (args[0] == undefined) {
+                if (args[0] == undefined) { // No arguments
                     bot.sendMessage({
                         to: channelID,
                         message: 'To use this command, type `' + prefix + 'TBATeam <team_number>`.'
@@ -102,7 +91,7 @@ bot.on('message', function (user, userID, channelID, message, event) {
                             'Rookie Year: ' + body.rookie_year + '\n' +
                             'Motto: ' + body.motto + '\n' +
                             'Website: ' + body.website
-                            // Send Message with Team Data
+                            // Send message with TeamData
                             bot.sendMessage({
                                 to: channelID,
                                 message: teamData
@@ -116,8 +105,14 @@ bot.on('message', function (user, userID, channelID, message, event) {
                     });
                 }
                 break;
+
+            // TEAMS SETUP BEGIN
+
+            // SetEvent
+            // Allows users to select an event, and populates TeamList with teams from event
+            // Requires FIRST Event Code (ie, FMA Mt. Olive 2019 = 2019njfla)
             case 'setEvent':
-                if (args[0] == undefined) {
+                if (args[0] == undefined) { // No arguments
                     bot.sendMessage({
                         to: channelID,
                         message: 'To use this command, type `' + prefix + 'setEvent <event_id>`.'
@@ -137,8 +132,8 @@ bot.on('message', function (user, userID, channelID, message, event) {
                             for (i = 0; i < body.length; i++) {
                                 teamList[i] = body[i].team_number;
                             }
+                            // Send message with TeamList
                             compileTeamListDisplay();
-                            // Send Message with Team List
                             bot.sendMessage({
                                 to: channelID,
                                 message: teamListDisplay
@@ -152,16 +147,27 @@ bot.on('message', function (user, userID, channelID, message, event) {
                     });
                 }
                 break;
+            // CheckTeams
+            // Displays the teams from TeamList
             case 'checkTeams':
+                // Send message with TeamList
                 compileTeamListDisplay();
-                // Send Message with Team List
                 bot.sendMessage({
                     to: channelID,
                     message: teamListDisplay
                 });
                 break;
+            
+            // TEAMS SETUP END
+            // PLAYER SETUP BEGIN
+
+            // SetPlayers
+            // Populates the members playing the draft into PickList
+            // Requires @user for each player separated by spaces (ie, !setPlayers @Qwerty253#9647 @testUser#9999)
             case 'setPlayers':
+                // Randomize players
                 args = shuffle(args);
+                // Initialize PickList with players
                 for (i = 0; i < args.length; i++) {
                     bot.getMember({
                         serverID: event.d.guild_id,
@@ -172,34 +178,47 @@ bot.on('message', function (user, userID, channelID, message, event) {
                 }
                 // DO NOT PLACE CODE HERE (callbacks aghhhhh)
                 break;
-            case 'checkPlayers':
+            // showDraft
+            // Displays the players and respective picks from PickList
+            case 'showDraft':
+                // Send message with PickList
                 compilePickListDisplay();
-                // Send Message with Pick List
                 bot.sendMessage({
                     to: channelID,
                     message: pickListDisplay
                 });
                 break;
+            // CheckCurrentPlayer
+            // Displays the player whose turn it is
             case 'checkCurrentPlayer':
+                // Set CurrentPlayer to the appropriate player in PickList
                 currentPlayer = Object.keys(pickList)[currentPlayerIndex];
+                // Send message with CurrentPlayer
                 bot.sendMessage({
                     to: channelID,
                     message: currentPlayer
                 });
                 break;
+
+            // PLAYER SETUP END
+
+            // Pick
+            // Allows users to pick a team, and adds it to their list
             case 'pick':
+                // Set CurrentPlayer to the appropriate player in PickList
                 currentPlayer = Object.keys(pickList)[currentPlayerIndex];
-                if (args[0] == undefined) {
+                
+                if (args[0] == undefined) { // No arguments
                     bot.sendMessage({
                         to: channelID,
                         message: 'Select a team!'
                     });
-                } else if (event.d.member.nick !== currentPlayer) { // not user's turn
+                } else if (event.d.member.nick !== currentPlayer) { // Not user's turn
                     bot.sendMessage({
                         to: channelID,
                         message: 'Not your turn!'
                     });
-                } else if (!teamListDisplay.includes(args[0])) {
+                } else if (!teamListDisplay.includes(args[0])) { // Desired team not available
                     bot.sendMessage({
                         to: channelID,
                         message: 'Team does not exist/is not competing here/has already been chosen!'
@@ -211,7 +230,7 @@ bot.on('message', function (user, userID, channelID, message, event) {
                         pickList[event.d.member.nick][1] = args[0];
                     } else if (pickList[event.d.member.nick][2] == 0) {
                         pickList[event.d.member.nick][2] = args[0];
-                    } else {
+                    } else { // probably never going to execute?
                         bot.sendMessage({
                             to: channelID,
                             message: 'You have already made 3 picks!'
@@ -219,20 +238,24 @@ bot.on('message', function (user, userID, channelID, message, event) {
                         break;
                     }
                 
+                    // Acknowledge pick with thumbsup emoji
                     bot.addReaction({
                         channelID: channelID,
                         messageID: event.d.id,
                         reaction: '👍'
                     });
 
+                    // Set CurrentPlayer to next player
                     currentPlayerIndex++;
 
+                    // Display updated draft
                     compilePickListDisplay();
                     bot.sendMessage({
                         to: channelID,
                         message: pickListDisplay
                     });
                     
+                    // Display updated TeamList
                     teamList.splice(teamList.indexOf(parseInt(args[0])), 1);
                     compileTeamListDisplay();
                     bot.sendMessage({
@@ -241,6 +264,8 @@ bot.on('message', function (user, userID, channelID, message, event) {
                     });
                 }
                 break;
+            // Reset
+            // Resets game, allows users to play again
             case 'reset':
                 pickList = {};
                 teamList = [];
@@ -255,7 +280,23 @@ bot.on('message', function (user, userID, channelID, message, event) {
                     '`' + prefix + 'prefix <new_prefix>`\n' + 
                     'Allows users to change the character that calls the bot (default is `!`)\n\n' +
                     '`' + prefix + 'TBATeam <team_number>`\n' +
-                    'Allows users to get detailed information on any FRC team, sourced from The Blue Alliance\n'
+                    'Allows users to access information about Teams, sourced from The Blue Alliance\n' + 
+                    '`' + prefix + 'setEvent <event_id>`\n' +
+                    'Allows users to set the event, from which teams will be pulled\n' + 
+                    '`event_id` must be official FIRST event code (ie, FMA Mt. Olive 2019 = 2019njfla)\n' + 
+                    '`' + prefix + 'checkTeams`\n' +
+                    'Displays the remaining available teams in the draft\n' + 
+                    '`' + prefix + 'setPlayers @user#9999 @user#9999...`\n' +
+                    'Allows users to set the players for the draft\n' + 
+                    'Requires @user for each player separated by spaces (ie, !setPlayers @Qwerty253#9647 @testUser#9999)\n' + 
+                    '`' + prefix + 'showDraft`\n' +
+                    'Displays the players and their choices in the draft\n' + 
+                    '`' + prefix + 'checkCurrentPlayer`\n' +
+                    'Displays the players whose turn it is\n' + 
+                    '`' + prefix + 'pick <team_number>`\n' +
+                    'Allows users to select a team for their draft alliance\n' + 
+                    '`' + prefix + 'reset`\n' +
+                    'Resets the draft. This is irreversible, so think wisely!\n'
                 });
                 break;
             // Test
@@ -265,54 +306,21 @@ bot.on('message', function (user, userID, channelID, message, event) {
                 break;
         }
     }
-
-    // Background Methods
-    // It will execute on specific events (not a call from prefix)
-
-    // Going to War
-    // if (checkCaps(message)) {
-    //     bot.addReaction({
-    //         channelID: channelID,
-    //         messageID: event.d.id,
-    //         reaction: '⚔'
-    //     });
-    // }
-
 });
 
 // Functions
 
-// Converts inputString to meme speak (good morning => gOoD MoRnInG)
-var meme = function (inputString) {
-    var memeString = '';
-    for (var i = 0; i<inputString.length; i++) {
-        memeString += i % 2 == 0 ? inputString[i].toLowerCase() : inputString[i].toUpperCase();
-    } 
-    return memeString;
-}
-
-// Checks to see if inputString is all caps
-var checkCaps = function (inputString) {
-    return !/[^A-Z\s]/.test(inputString);
-}
-
-// Checks to see if a message contains a string (ignoring before and after)
-// string to be tested must have stars before and after
-var looseMatch = function (msg, rule) {
-    return new RegExp("^" + rule.split("*").join(".*") + "$").test(msg);
-}
-
+// Randomize order of elements in an array
 var shuffle = function (array) {
     var currentIndex = array.length, temporaryValue, randomIndex;
-  
-    // While there remain elements to shuffle...
+    
     while (0 !== currentIndex) {
   
-      // Pick a remaining element...
+      // Pick a remaining element
       randomIndex = Math.floor(Math.random() * currentIndex);
       currentIndex -= 1;
   
-      // And swap it with the current element.
+      // And swap it with the current element
       temporaryValue = array[currentIndex];
       array[currentIndex] = array[randomIndex];
       array[randomIndex] = temporaryValue;
@@ -321,6 +329,7 @@ var shuffle = function (array) {
     return array;
 }
 
+// Create teamListDisplay (String) from teamList (array)
 var compileTeamListDisplay = function () {
     teamListDisplay = '';
     for (i = 0; i < teamList.length; i++) {
@@ -328,6 +337,7 @@ var compileTeamListDisplay = function () {
     }
 }
 
+// Create pickListDisplay (String) from pickList (JSON)
 var compilePickListDisplay = function () {
     var pickListPlayers = Object.keys(pickList);
     var pickListTeams = Object.values(pickList);
@@ -340,6 +350,7 @@ var compilePickListDisplay = function () {
     pickListDisplay = createTable(pickListDisplayArr);
 }
 
+// Create a pretty table with Discord formatting
 var createTable = function (arr) {
     var table = '';
     var colArr = [];
@@ -356,7 +367,7 @@ var createTable = function (arr) {
 
     regBorder = fancyBorder.replace(/=/g, '-');
 
-    table += '```';
+    table += '```'; // Discord monospace
     table += fancyBorder + '\n';
 
     table += '|| Player ' + ' '.repeat(Math.max(...colArr) - 8) + '| 1st Pick | 2nd Pick | 3rd Pick ||' + '\n'; 
@@ -373,6 +384,6 @@ var createTable = function (arr) {
         table += '\n';
     }
 
-    table += '```';
+    table += '```'; // Discord monospace
     return table;
 }
