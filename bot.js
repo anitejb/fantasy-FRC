@@ -2,7 +2,9 @@ var Discord = require('discord.io');
 var auth = require('./auth.json');
 var request = require('request');
 var pickList = {};
-var teamList = "";
+var pickListDisplay = '';
+var teamList = [];
+var teamListDisplay = '';
 
 var prefix = '!';
 
@@ -59,7 +61,7 @@ bot.on('message', function (user, userID, channelID, message, event) {
                 if (args[0] == undefined || args[0].length > 1) {
                     bot.sendMessage({
                         to: channelID,
-                        message: 'Prefixes can only be a single character.'
+                        message: 'Prefixes may only be a single character.'
                     });
                 } else {
                     prefix = args[0];
@@ -131,12 +133,13 @@ bot.on('message', function (user, userID, channelID, message, event) {
                         body = JSON.parse(body);
                         if (!error && response.statusCode == 200) {
                             for (i = 0; i < body.length; i++) {
-                                teamList += body[i].team_number + '\n';
+                                teamList[i] = body[i].team_number;
                             }
+                            compileTeamListDisplay();
                             // Send Message with Team List
                             bot.sendMessage({
                                 to: channelID,
-                                message: teamList
+                                message: teamListDisplay
                             });
                         } else {
                             bot.sendMessage({
@@ -148,19 +151,31 @@ bot.on('message', function (user, userID, channelID, message, event) {
                 }
                 break;
             case 'checkTeams':
+                compileTeamListDisplay();
+                // Send Message with Team List
                 bot.sendMessage({
                     to: channelID,
-                    message: teamList
+                    message: teamListDisplay
                 });
                 break;
             case 'setPlayers':
                 args = shuffle(args);
                 for (i = 0; i < args.length; i++) {
-                    pickList[args[i].substring(2, args[i].length - 1)] = [0, 0, 0];
+                    bot.getMember({
+                        serverID: event.d.guild_id,
+                        userID: args[i].substring(3, args[i].length - 1)
+                    }, function (err, memberInfo) {
+                        pickList[memberInfo.nick] = ['0', '0', '0'];
+                    });
                 }
+                // DO NOT PLACE CODE HERE (callbacks aghhhhh)
+                break;
+            case 'checkPlayers':
+                compilePickListDisplay();
+                // Send Message with Pick List
                 bot.sendMessage({
                     to: channelID,
-                    message: JSON.stringify(pickList)
+                    message: pickListDisplay
                 });
                 break;
             case 'pick':
@@ -169,22 +184,38 @@ bot.on('message', function (user, userID, channelID, message, event) {
                         to: channelID,
                         message: 'Select a team!'
                     });
-                } else {
-                    if (pickList[userID][0] == 0) {
-                        pickList[userID][0] = args[0];
-                        teamList = teamList.substring(0, teamList.indexOf(args[0])) + teamList.substring(teamList.indexOf(args[0]) + args[0].length + 1);
-                    } else if (pickList[userID][1] == 0) {
-                        pickList[userID][1] = args[0];
-                        teamList = teamList.substring(0, teamList.indexOf(args[0])) + teamList.substring(teamList.indexOf(args[0]) + args[0].length + 1);
-                    } else if (pickList[userID][2] == 0) {
-                        pickList[userID][2] = args[0];
-                        teamList = teamList.substring(0, teamList.indexOf(args[0])) + teamList.substring(teamList.indexOf(args[0]) + args[0].length + 1);
+                } else if (teamListDisplay.includes(args[0])) {
+                    if (pickList[event.d.member.nick][0] == 0) {
+                        pickList[event.d.member.nick][0] = args[0];
+                    } else if (pickList[event.d.member.nick][1] == 0) {
+                        pickList[event.d.member.nick][1] = args[0];
+                    } else if (pickList[event.d.member.nick][2] == 0) {
+                        pickList[event.d.member.nick][2] = args[0];
+                    } else {
+                        bot.sendMessage({
+                            to: channelID,
+                            message: 'You have already made 3 picks!'
+                        });
+                        break;
                     }
+                    compilePickListDisplay();
+                    bot.sendMessage({
+                        to: channelID,
+                        message: pickListDisplay
+                    });
+                    
+                    teamList.splice(teamList.indexOf(parseInt(args[0])), 1);
+                    compileTeamListDisplay();
+                    bot.sendMessage({
+                        to: channelID,
+                        message: teamListDisplay
+                    });
                 }
-                bot.sendMessage({
-                    to: channelID,
-                    message: JSON.stringify(pickList)
-                });
+                break;
+            case 'reset':
+                pickList = {};
+                teamList = [];
+                teamListDisplay = '';
                 break;
             // Help
             // Displays a list of commands a user can select
@@ -259,4 +290,60 @@ var shuffle = function (array) {
     }
   
     return array;
+}
+
+var compileTeamListDisplay = function () {
+    teamListDisplay = '';
+    for (i = 0; i < teamList.length; i++) {
+        teamListDisplay += teamList[i] + '\n';
+    }
+}
+
+var compilePickListDisplay = function () {
+    var pickListPlayers = Object.keys(pickList);
+    var pickListTeams = Object.values(pickList);
+    var pickListDisplayArr = [];
+    pickListDisplayArr[0] = ['Player', '1st Pick', '2nd Pick', '3rd Pick'];
+    for (i = 0; i < pickListPlayers.length; i++) {
+        pickListDisplayArr[i + 1] = [pickListPlayers[i], pickListTeams[i][0], pickListTeams[i][1], pickListTeams[i][2]];
+    }
+
+    pickListDisplay = createTable(pickListDisplayArr);
+}
+
+var createTable = function (arr) {
+    var table = '';
+    var colArr = [];
+    var fancyBorder = '';
+    var regBorder = '';
+
+    for (i = 0; i < arr.length; i++) {
+        colArr[i] = arr[i][0].length + 2;
+    }
+
+    fancyBorder = '++';
+    fancyBorder += '='.repeat(Math.max(...colArr));
+    fancyBorder += '+==========+==========+==========++';
+
+    regBorder = fancyBorder.replace(/=/g, '-');
+
+    table += '```';
+    table += fancyBorder + '\n';
+
+    table += '|| Player ' + ' '.repeat(Math.max(...colArr) - 8) + '| 1st Pick | 2nd Pick | 3rd Pick ||' + '\n'; 
+    table += fancyBorder + '\n';
+
+    for (i = 1; i < arr.length; i++) {
+        table += '|| ' + arr[i][0] + ' '.repeat(Math.max(...colArr) - arr[i][0].length - 1) +
+                 '|   ' + arr[i][1] + ' '.repeat(7 - arr[i][1].length) + 
+                 '|   ' + arr[i][2] + ' '.repeat(7 - arr[i][2].length) + 
+                 '|   ' + arr[i][3] + ' '.repeat(7 - arr[i][3].length) + '||';
+        
+        table += '\n';
+        table += i !== arr.length - 1 ? regBorder : fancyBorder;
+        table += '\n';
+    }
+
+    table += '```';
+    return table;
 }
