@@ -246,7 +246,12 @@ bot.on('message', function (user, userID, channelID, message, event) {
                     });
 
                     // Set CurrentPlayer to next player
-                    currentPlayerIndex++;
+                    var snaking = (currentPlayerIndex + 1) % Object.keys(pickList) ? true : false;
+                    if (snaking) {
+                        currentPlayerIndex++;
+                    } else {
+                        currentPlayerIndex--;
+                    }
 
                     // Display updated draft
                     compilePickListDisplay();
